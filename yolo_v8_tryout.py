@@ -10,7 +10,7 @@ import json
 model = YOLO('yolov8n.pt')
 
 # Open the video file
-video_path = "our_data/surveillance_camera_2.mp4"
+video_path = "../our_data/surveillance_camera_2.mp4"
 cap = cv2.VideoCapture(video_path)
 
 # Store the track history
