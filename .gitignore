@@ -160,3 +160,20 @@ cython_debug/
 #.idea/
 
 .DS_Store
+
+# Media files
+*.jpg
+*.png
+*.mov
+*.mp4
+*.mp3
+*data*
+
+# Run results
+runs/*
+
+# Draft
+*draft*
+
+# Model files
+*.pt
