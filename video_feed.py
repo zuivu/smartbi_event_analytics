@@ -3,9 +3,9 @@ import cv2
 from dotenv import load_dotenv
 
 load_dotenv()
-USERNAME = os.environ.get("DBMS")
-PASSWORD = os.environ.get("USER_NAME")
-IP_ADDRESS = os.environ.get("PASSWORD")
+USERNAME = os.environ.get("USERNAME")
+PASSWORD = os.environ.get("PASSWORD")
+IP_ADDRESS = os.environ.get("IP_ADDRESS")
 
 
 def display_rtsp_stream(rtsp_url):
