@@ -6,15 +6,15 @@ load_dotenv()
 USERNAME = os.environ.get("USERNAME")
 PASSWORD = os.environ.get("PASSWORD")
 IP_ADDRESS = os.environ.get("IP_ADDRESS")
-
+high_res=True
 
 def display_rtsp_stream(rtsp_url):
     # Create a video capture object with the RTSP URL
     cap = cv2.VideoCapture(rtsp_url)
     # Check if the video was opened successfully
-    if not cap.isOpened():
-        print("Error: Could not open video.")
-        return
+    # if not cap.isOpened():
+    #     print("Error: Could not open video.")
+    #     return
 
     try:
         # Loop to continuously fetch frames from the RTSP stream
@@ -37,5 +37,7 @@ def display_rtsp_stream(rtsp_url):
         cap.release()
         cv2.destroyAllWindows()
 
-rtsp_url = f"rtsp://{USERNAME}:{PASSWORD}>@{IP_ADDRESS}:554/stream1"
+
+stream_id = "stream1" if high_res else False
+rtsp_url = f"rtsp://{USERNAME}:{PASSWORD}>@{IP_ADDRESS}:554/{stream_id}"
 display_rtsp_stream(rtsp_url)
