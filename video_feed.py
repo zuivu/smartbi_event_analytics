@@ -38,6 +38,7 @@ def display_rtsp_stream(rtsp_url):
         cv2.destroyAllWindows()
 
 
-stream_id = "stream1" if high_res else False
-rtsp_url = f"rtsp://{USERNAME}:{PASSWORD}>@{IP_ADDRESS}:554/{stream_id}"
-display_rtsp_stream(rtsp_url)
+if __name__ == "__main__":
+    stream_id = "stream1" if high_res else False
+    rtsp_url = f"rtsp://{USERNAME}:{PASSWORD}>@{IP_ADDRESS}:554/{stream_id}"
+    display_rtsp_stream(rtsp_url)
