@@ -1,4 +1,12 @@
+import os
 import cv2
+from dotenv import load_dotenv
+
+load_dotenv()
+USERNAME = os.environ.get("DBMS")
+PASSWORD = os.environ.get("USER_NAME")
+IP_ADDRESS = os.environ.get("PASSWORD")
+
 
 def display_rtsp_stream(rtsp_url):
     # Create a video capture object with the RTSP URL
@@ -29,5 +37,5 @@ def display_rtsp_stream(rtsp_url):
         cap.release()
         cv2.destroyAllWindows()
 
-rtsp_url = "<URL>"
+rtsp_url = f"rtsp://{USERNAME}:{PASSWORD}>@{IP_ADDRESS}:554/stream1"
 display_rtsp_stream(rtsp_url)
