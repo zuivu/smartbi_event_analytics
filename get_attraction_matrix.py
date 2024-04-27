@@ -2,6 +2,14 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 
+def get_attraction_matrix_from_boxes(per_boxes, obj_boxes):
+    """Assume per_boxes and obj_boxes is a dict with key is id, and value is boxes (x,y,w,h).
+    """
+
+    per_loc = np.array([box[:2] for box in per_boxes.values()])
+    obj_loc = np.array([box[:2] for box in obj_boxes.values()])
+    return get_attraction_matrix(per_loc, obj_loc)
+
 def get_attraction_matrix(per_loc, obj_loc):
     """
         Matrix: each value is a vector from a person to an object 
@@ -21,8 +29,10 @@ def get_similarity_vector_matrix(attraction_matrix, per_traj):
     """
         Matrix: each value is a vector from a person to an object 
         Args:
-            attraction_matrix [p, o, 2]: Matrix of vector from location of each person to each object
-            per_traj [p, 2]: trajectory of p persons of interest
+            attraction_matrix [p, o, 2]: Matrix of vector from location of each person to each object,
+                retrieved from get_attraction_matrix()
+            per_traj [p, 2]: trajectory of p persons of interest,
+                retrieved from predict_trajectory_vector()
         Return:
             per_obj_sim [p, o]: Matrix of similarity bw direction and actual trajectory of each person to each object
     """
