@@ -8,9 +8,9 @@ def get_object_list(frames, names):
     Returns:
         tuple: A tuple containing two dictionaries:
             - The first dictionary contains bounding boxes of persons, where keys are track IDs
-            and values are lists of bounding box coordinates [x, y, width, height].
+            and values are lists of location (x,y) # bounding box coordinates [x, y, width, height].
             - The second dictionary contains bounding boxes of objects other than persons, where
-            keys are track IDs and values are lists of bounding box coordinates [x, y, width, height].
+            keys are track IDs and values are lists of location (x,y) # bounding box coordinates [x, y, width, height].
     """
     person_list = {}
     object_list = {}
@@ -29,7 +29,11 @@ def get_object_list(frames, names):
 
 
 def add_to_dict(box, track_id, target_dict):
+    #### Modify by duy, only add box
+    x, y, _, _ = box
+    location = (x,y)
+    ####
     if track_id not in target_dict:
-        target_dict[track_id] = [box]
+        target_dict[track_id] = [location]
     else:
-        target_dict[track_id].append(box)
+        target_dict[track_id].append(location)
