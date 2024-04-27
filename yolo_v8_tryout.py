@@ -48,74 +48,76 @@ while cap.isOpened():
         annotated_frame = results[0].plot(conf=False, labels=False, boxes=True)
 
         ## Get the boxes and track IDs
-        boxes = results[0].boxes.xywh.cpu()
-        track_ids = results[0].boxes.id.int().cpu().tolist()
+        if results[0].boxes.id is not None:
+            
+            boxes = results[0].boxes.xywh.cpu()
+            track_ids = results[0].boxes.id.int().cpu().tolist()
 
-        attractive_object_indices = []
-        persons_filtered_idx = []
-        objects_filtered_idx = []
-        
-        person_dict, object_dict = get_object_list(frames_list[-30:], names=results[0].names)
-        if len(person_dict) >= 1 and len(object_dict) >= 1:
-            # Get trajectories and location of persons of interest (appear at least a certain number of frames, defauly by 5) 
-            persons_location, persons_trajectory, persons_pred_traj, persons_filtered_idx = predict_trajectory_vector(person_dict)
-            objects_location, _, _, objects_filtered_idx = predict_trajectory_vector(object_dict)
+            attractive_object_indices = []
+            persons_filtered_idx = []
+            objects_filtered_idx = []
+            
+            person_dict, object_dict = get_object_list(frames_list[-30:], names=results[0].names)
+            if len(person_dict) >= 1 and len(object_dict) >= 1:
+                # Get trajectories and location of persons of interest (appear at least a certain number of frames, defauly by 5) 
+                persons_location, persons_trajectory, persons_pred_traj, persons_filtered_idx = predict_trajectory_vector(person_dict)
+                objects_location, _, _, objects_filtered_idx = predict_trajectory_vector(object_dict)
 
-            # Visualize predicted path, size (number of objects, number of points, 2)
-            if len(persons_pred_traj) > 0:
-                predicted_path = np.hstack(persons_pred_traj.reshape(-1,2)).astype(np.int32).reshape((-1, 1, 2))
-                for per_id in range(len(persons_location)):
-                    cv2.arrowedLine(annotated_frame,
-                                    persons_location[per_id],
-                                    persons_pred_traj[per_id],
-                                    color=(180, 180, 180),
-                                    tipLength=0.15,
-                                    thickness=8)
-                    # for object_id in range(len(objects_location)):
-                    #     cv2.arrowedLine(annotated_frame,
-                    #                     persons_location[per_id],
-                    #                     objects_location[object_id],
-                    #                     color=(120, 240, 120),
-                    #                     tipLength=0.1,
-                    #                     thickness=5)
+                # Visualize predicted path, size (number of objects, number of points, 2)
+                if len(persons_pred_traj) > 0:
+                    predicted_path = np.hstack(persons_pred_traj.reshape(-1,2)).astype(np.int32).reshape((-1, 1, 2))
+                    for per_id in range(len(persons_location)):
+                        cv2.arrowedLine(annotated_frame,
+                                        persons_location[per_id],
+                                        persons_pred_traj[per_id],
+                                        color=(180, 180, 180),
+                                        tipLength=0.15,
+                                        thickness=8)
+                        # for object_id in range(len(objects_location)):
+                        #     cv2.arrowedLine(annotated_frame,
+                        #                     persons_location[per_id],
+                        #                     objects_location[object_id],
+                        #                     color=(120, 240, 120),
+                        #                     tipLength=0.1,
+                        #                     thickness=5)
 
-                # Get cosine matrix
-                attraction_matrix = get_attraction_matrix(persons_location, objects_location)
-                cos_sim_path_matrix = get_similarity_vector_matrix(attraction_matrix, persons_trajectory)
+                    # Get cosine matrix
+                    attraction_matrix = get_attraction_matrix(persons_location, objects_location)
+                    cos_sim_path_matrix = get_similarity_vector_matrix(attraction_matrix, persons_trajectory)
 
-                # Get truth table of attention,
-                # if cos > 0.2 (0 mean trajectory is orthogonal with direction to object,
-                # the closer to 1, the more attraction it get)
-                sim_thres = 0.7
-                sim_path_result = (cos_sim_path_matrix >= sim_thres)
-                
-                # then if more than 3 out of 10 people in the period has path closed, then object is attractive
-                attractive_thres = 0
-                sim_path_count_per_object = np.sum(sim_path_result, axis=0)
-                threshold = attractive_thres * sim_path_count_per_object.shape[0]
-                # 60% of total rows
-                attractive_object_indices = np.array(objects_filtered_idx)[sim_path_count_per_object.astype(bool)]
+                    # Get truth table of attention,
+                    # if cos > 0.2 (0 mean trajectory is orthogonal with direction to object,
+                    # the closer to 1, the more attraction it get)
+                    sim_thres = 0.7
+                    sim_path_result = (cos_sim_path_matrix >= sim_thres)
+                    
+                    # then if more than 3 out of 10 people in the period has path closed, then object is attractive
+                    attractive_thres = 0
+                    sim_path_count_per_object = np.sum(sim_path_result, axis=0)
+                    threshold = attractive_thres * sim_path_count_per_object.shape[0]
+                    # 60% of total rows
+                    attractive_object_indices = np.array(objects_filtered_idx)[sim_path_count_per_object.astype(bool)]
 
-        # Draw box of attractive objects and trajectory of person
-        for box, track_id in zip(boxes, track_ids):
-            if track_id in persons_filtered_idx: # only draw tracking for humans
-                x, y, w, h = box
-                track = track_history[track_id]
-                track.append((float(x), float(y)))  # x, y center point
-                if len(track) > 15:  # retain 15 tracks for 90 frames
-                    track.pop(0)
+            # Draw box of attractive objects and trajectory of person
+            for box, track_id in zip(boxes, track_ids):
+                if track_id in persons_filtered_idx: # only draw tracking for humans
+                    x, y, w, h = box
+                    track = track_history[track_id]
+                    track.append((float(x), float(y)))  # x, y center point
+                    if len(track) > 15:  # retain 15 tracks for 90 frames
+                        track.pop(0)
 
-                # Draw the tracking lines
-                points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
-                cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 230, 230), thickness=12)
-            else:
-                if track_id in attractive_object_indices:
-                    x,y,w,h = box
-                    x = int(x - w/2)
-                    y = int(y-h/2)
-                    w = int(w)
-                    h = int(h)
-                    cv2.rectangle(annotated_frame, (x + w, y + h), (x, y), (0, 0, 255), 10)
+                    # Draw the tracking lines
+                    points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
+                    cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 230, 230), thickness=12)
+                else:
+                    if track_id in attractive_object_indices:
+                        x,y,w,h = box
+                        x = int(x - w/2)
+                        y = int(y-h/2)
+                        w = int(w)
+                        h = int(h)
+                        cv2.rectangle(annotated_frame, (x + w, y + h), (x, y), (0, 0, 255), 10)
 
         # Display the annotated frame
         cv2.imshow("YOLOv8 Tracking", annotated_frame)
