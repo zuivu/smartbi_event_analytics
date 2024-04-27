@@ -30,11 +30,11 @@ def get_object_list(frames, names):
 
 
 def add_to_dict(box, track_id, target_dict):
-    #### Modify by duy, only add box
-    x, y, _, _ = box
-    location = (x,y)
+    # #### Modify by duy, only add x,y
+    # x, y, w, h = box
+    # location = (x,y)
     ####
     if track_id not in target_dict:
-        target_dict[track_id] = [location]
+        target_dict[track_id] = [box]
     else:
-        target_dict[track_id].append(location)
+        target_dict[track_id].append(box)

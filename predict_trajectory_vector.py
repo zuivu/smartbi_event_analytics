@@ -2,7 +2,7 @@ from typing import List, Tuple, Dict
 import numpy as np
 
 
-def linear_regression(points: List[Tuple[float, float]]) -> np.ndarray:
+def linear_regression(points: List[Tuple[float, float, float, float]]) -> np.ndarray:
     """
     Fit a linear regression model to a set of points.
     y = ax + b
@@ -31,18 +31,7 @@ def linear_regression(points: List[Tuple[float, float]]) -> np.ndarray:
 
     # simulate future trajectory by 100 points or if either x, or y reach the border of the image
     # assuming it the resolution where
-    
 
-    # pred_traj = []
-    # x_inc = x[-1] - x[-3] # dertermine the direction of x from the last 2 points
-    # if x_inc > 0:
-    #     x_inc = 1
-    # elif x_inc < 0:
-    #     x_inc = -1
-    # else:
-    #     x_inc = 0
-
-    
     max_x = 1920
     max_y = 1080
     x_dir = current_trajectory[0]
@@ -72,8 +61,8 @@ def linear_regression(points: List[Tuple[float, float]]) -> np.ndarray:
 
 
 def predict_trajectory_vector(
-    id_dict: Dict[str, List[Tuple[float, float]]], threshold: int = 5
-) -> Tuple[Dict[str, List[Tuple[float, float]]], np.ndarray]:
+    id_dict: Dict[str, List[Tuple[float, float, float, float]]], threshold: int = 5
+) -> Tuple[Dict[str, List[Tuple[float, float, float, float]]], np.ndarray]:
     """
     Predicts the trajectory vector for each object ID in the given dictionary.
 
@@ -88,17 +77,17 @@ def predict_trajectory_vector(
             - vector_dict: A NumPy array containing the predicted tracking points of the vectors for each valid object ID, size (n, 100, 2)
     """
 
-    #valid_dict = {}
+    filtered_idx = []
     locs = []
     cur_trajs = []
     pred_trajs = []
 
-    for obj_id, points in sorted(id_dict.items()):
+    for obj_idx, points in sorted(id_dict.items()):
         if len(points) >= threshold:
-            #valid_dict[obj_id] = points
+            filtered_idx.append(obj_idx)
             locs.append((round(points[-1][0]), round(points[-1][1]))) # only return last location
             current_trajectory, pred_traj = linear_regression(points)
             cur_trajs.append(current_trajectory)
             pred_trajs.append(pred_traj)
 
-    return np.array(locs), np.array(cur_trajs), np.array(pred_trajs)
+    return np.array(locs), np.array(cur_trajs), np.array(pred_trajs), filtered_idx
