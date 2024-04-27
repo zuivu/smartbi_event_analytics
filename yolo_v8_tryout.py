@@ -1,3 +1,4 @@
+import os
 import json
 from collections import defaultdict
 
@@ -10,12 +11,18 @@ from get_object_list import get_object_list
 from predict_trajectory_vector import predict_trajectory_vector
 from get_attraction_matrix import get_attraction_matrix, get_similarity_vector_matrix, get_attraction_matrix_from_boxes
 
+from dotenv import load_dotenv
+
+load_dotenv()
+USERNAME = os.environ.get("USERNAME")
+PASSWORD = os.environ.get("PASSWORD")
+IP_ADDRESS = os.environ.get("IP_ADDRESS")
 
 # Load the YOLOv8 model
 model = YOLO('yolov8n.pt')
 
 # Open the video file
-video_path = "../our_data/surveillance_camera_3.mp4"
+video_path = f"rtsp://{USERNAME}:{PASSWORD}@{IP_ADDRESS}:554/stream1" #"../our_data/surveillance_camera_3.mp4"
 cap = cv2.VideoCapture(video_path)
 
 # Store the track history
