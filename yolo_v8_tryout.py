@@ -4,10 +4,11 @@ from collections import defaultdict
 import cv2
 import numpy as np
 from ultralytics import YOLO
+import pickle
 
 from get_object_list import get_object_list
 from predict_trajectory_vector import predict_trajectory_vector
-from get_attraction_matrix import get_attraction_matrix, get_similarity_vector_matrix
+from get_attraction_matrix import get_attraction_matrix, get_similarity_vector_matrix, get_attraction_matrix_from_boxes
 
 
 # Load the YOLOv8 model
@@ -37,19 +38,21 @@ while cap.isOpened():
         frames_list.append(results)
 
         # Visualization at each frame
-        annotated_frame = results[0].plot(conf=True, labels=True, boxes=True)
+        annotated_frame = results[0].plot(conf=False, labels=False, boxes=True)
 
         ## Get the boxes and track IDs
         boxes = results[0].boxes.xywh.cpu()
         track_ids = results[0].boxes.id.int().cpu().tolist()
 
         attractive_object_indices = []
+        persons_filtered_idx = []
+        objects_filtered_idx = []
         
         person_dict, object_dict = get_object_list(frames_list[-30:], names=results[0].names)
         if len(person_dict) >= 1 and len(object_dict) >= 1:
             # Get trajectories and location of persons of interest (appear at least a certain number of frames, defauly by 5) 
-            persons_location, persons_trajectory, persons_pred_traj = predict_trajectory_vector(person_dict)
-            objects_location, _, _ = predict_trajectory_vector(object_dict)
+            persons_location, persons_trajectory, persons_pred_traj, persons_filtered_idx = predict_trajectory_vector(person_dict)
+            objects_location, _, _, objects_filtered_idx = predict_trajectory_vector(object_dict)
 
             # Visualize predicted path, size (number of objects, number of points, 2)
             if len(persons_pred_traj) > 0:
@@ -61,6 +64,13 @@ while cap.isOpened():
                                     color=(180, 180, 180),
                                     tipLength=0.15,
                                     thickness=8)
+                    # for object_id in range(len(objects_location)):
+                    #     cv2.arrowedLine(annotated_frame,
+                    #                     persons_location[per_id],
+                    #                     objects_location[object_id],
+                    #                     color=(120, 240, 120),
+                    #                     tipLength=0.1,
+                    #                     thickness=5)
 
                 # Get cosine matrix
                 attraction_matrix = get_attraction_matrix(persons_location, objects_location)
@@ -69,19 +79,19 @@ while cap.isOpened():
                 # Get truth table of attention,
                 # if cos > 0.2 (0 mean trajectory is orthogonal with direction to object,
                 # the closer to 1, the more attraction it get)
-                sim_thres = 0.2
+                sim_thres = 0.7
                 sim_path_result = (cos_sim_path_matrix >= sim_thres)
                 
                 # then if more than 3 out of 10 people in the period has path closed, then object is attractive
-                attractive_thres = 0.3 if len(person_dict) >= 10 else 0
+                attractive_thres = 0
                 sim_path_count_per_object = np.sum(sim_path_result, axis=0)
                 threshold = attractive_thres * sim_path_count_per_object.shape[0]
                 # 60% of total rows
-                attractive_object_indices = np.where(sim_path_count_per_object > threshold)[0].tolist()
+                attractive_object_indices = np.array(objects_filtered_idx)[sim_path_count_per_object.astype(bool)]
 
         # Draw box of attractive objects and trajectory of person
         for box, track_id in zip(boxes, track_ids):
-            if track_id in list(person_dict.keys()): # only draw tracking for humans
+            if track_id in persons_filtered_idx: # only draw tracking for humans
                 x, y, w, h = box
                 track = track_history[track_id]
                 track.append((float(x), float(y)))  # x, y center point
@@ -90,10 +100,10 @@ while cap.isOpened():
 
                 # Draw the tracking lines
                 points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
-                cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 230, 230), thickness=10)
+                cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 230, 230), thickness=12)
             else:
                 if track_id in attractive_object_indices:
-                    x,y,w,h = boxes[track_id]
+                    x,y,w,h = box
                     x = int(x - w/2)
                     y = int(y-h/2)
                     w = int(w)
@@ -116,6 +126,5 @@ cap.release()
 cv2.destroyAllWindows()
 
 
-with open("tracking_data.json", "wb") as f:
-    str = json.dumps(track_history)
-    f.write(str.encode())
+# with open("results.pickle", "wb") as f:
+#     pickle.dump(frames_list, f)

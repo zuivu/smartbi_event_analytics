@@ -177,3 +177,6 @@ runs/*
 
 # Model files
 *.pt
+
+# pickle files
+*.pickle
