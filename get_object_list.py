@@ -18,6 +18,7 @@ def get_object_list(frames, names):
         boxes = results[0].boxes.xywh.cpu()
         track_ids = results[0].boxes.id.int().cpu().tolist()
         class_ids = results[0].boxes.cls.int().cpu().tolist()
+        conf = results[0].boxes.conf.int().cpu().tolist()
 
         for box, track_id, class_id in zip(boxes, track_ids, class_ids):
             if names[class_id] == "person":

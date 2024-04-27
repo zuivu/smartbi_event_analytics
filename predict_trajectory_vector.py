@@ -49,7 +49,7 @@ def linear_regression(points: List[Tuple[float, float]]) -> np.ndarray:
     y_dir = current_trajectory[1]
     magnitude = np.sqrt(x_dir**2 + y_dir**2)
 
-    length_traj = 200 # scale the pred_trajectory to max 5 pixels in length
+    length_traj = 100 # scale the pred_trajectory to max 5 pixels in length
     if magnitude > length_traj:
         scale_factor = length_traj/magnitude
         x_dir *= scale_factor
