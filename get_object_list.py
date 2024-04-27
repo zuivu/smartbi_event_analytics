@@ -22,9 +22,7 @@ def get_object_list(frames, names):
 
         for box, track_id, class_id in zip(boxes, track_ids, class_ids):
             if names[class_id] == "person":
-                if conf[class_id] > 0.7:
-                    add_to_dict(box.tolist(), track_id, person_list)
-                continue    # even person is not identified with conf, not add to other object list
+                add_to_dict(box.tolist(), track_id, person_list)
             else:
                 add_to_dict(box.tolist(), track_id, object_list)
 
